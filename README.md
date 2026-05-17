@@ -1,5 +1,3 @@
-# rag-llm
-
 # Financial & Payroll Data RAG System
 
 This project implements a **Retrieval-Augmented Generation (RAG)** pipeline designed to extract general ledger, accrual, and payroll batch data from an Oracle Database, vectorize it using Azure OpenAI, store it in a ChromaDB vector database, and provide an interactive terminal interface for domain-specific Q&A.
@@ -55,15 +53,6 @@ oracledb.init_oracle_client(lib_dir=r'/path/to/your/instantclient')
 
 The architecture is divided into two primary loops: **Ingestion** (Data Collection & Vectorization) and **Execution** (Query Retrieval & LLM Generation).
 
-```
-[Oracle DB] ──> [Text Formatting] ──> [Azure Embeddings] ──> [ChromaDB Vector Store]
-                                                                     │
-[User Query] ──> [Azure Embeddings] ──> [Cosine Similarity Search] ──┘
-       │
-       ▼
-[Context + Prompt] ──> [Azure OpenAI LLM] ──> [Accurate Answer]
-
-```
 
 ### Step 1: Client Initializations
 
