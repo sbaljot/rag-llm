@@ -1,13 +1,12 @@
 import oracledb
 import chromadb
 from openai import AzureOpenAI
-import config
+import config #this file has to be created to import all the external sources used in the code
 
 oracledb.init_oracle_client(lib_dir=r'instant client path')
 
 
 def get_azure_client():
-    """Initialize Azure OpenAI client."""
     import os
     return AzureOpenAI(
         api_key=os.environ["AZURE_OPENAI_API_KEY"],
@@ -17,7 +16,6 @@ def get_azure_client():
 
 
 def fetch_data_from_oracle():
-    """Fetch accrual and payroll batch data from Oracle database."""
     connection = oracledb.connect(
         user=config.ORACLE_USER,
         password=config.ORACLE_PASSWORD,
@@ -45,7 +43,6 @@ def fetch_data_from_oracle():
     records = []
     for idx, row in enumerate(rows):
         record = dict(zip(columns, row))
-        # Build a text representation for embedding
         text = (
             f"Accounting Date: {record.get('accounting_date')} | "
             f"Batch Name: {record.get('batch_name')} | "
@@ -85,7 +82,6 @@ def fetch_data_from_oracle():
 
 
 def get_embeddings(texts, client):
-    """Generate embeddings for a list of texts using Azure OpenAI."""
     response = client.embeddings.create(
         input=texts,
         model=config.AZURE_EMBEDDING_DEPLOYMENT,
@@ -94,10 +90,8 @@ def get_embeddings(texts, client):
 
 
 def build_vector_store(records, client):
-    """Store records in ChromaDB with their embeddings."""
     chroma_client = chromadb.PersistentClient(path=config.CHROMA_PERSIST_DIR)
 
-    # Delete existing collection if it exists, then recreate
     try:
         chroma_client.delete_collection(config.CHROMA_COLLECTION_NAME)
     except Exception:
@@ -108,7 +102,6 @@ def build_vector_store(records, client):
         metadata={"hnsw:space": "cosine"},
     )
 
-    # Process in batches of 100 to avoid API limits
     batch_size = 100
     for i in range(0, len(records), batch_size):
         batch = records[i : i + batch_size]
@@ -129,7 +122,6 @@ def build_vector_store(records, client):
 
 
 def query_vector_store(query, client, top_k=5):
-    """Search ChromaDB for the most relevant records given a query."""
     chroma_client = chromadb.PersistentClient(path=config.CHROMA_PERSIST_DIR)
     collection = chroma_client.get_or_create_collection(
         name=config.CHROMA_COLLECTION_NAME,
@@ -151,7 +143,6 @@ def query_vector_store(query, client, top_k=5):
 
 
 def ask_llm(query, context_docs, client):
-    """Send the query along with retrieved context to Azure OpenAI for an answer."""
     context = "\n\n".join(context_docs)
 
     messages = [
@@ -195,7 +186,6 @@ def ingest():
 
 
 def ask(query):
-    """Full RAG query: embed query -> search ChromaDB -> get LLM answer."""
     client = get_azure_client()
 
     print(f"Searching for: {query}")
@@ -215,7 +205,6 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "ingest":
         ingest()
     else:
-        # Interactive query mode
         print("RAG System Ready. Type 'quit' to exit.\n")
         while True:
             query = input("Enter your question: ").strip()
